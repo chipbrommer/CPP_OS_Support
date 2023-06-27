@@ -79,7 +79,7 @@ namespace Essentials
 			//double		GetCpuTemperatureInCelsuis();
 			//double		GetCpuTemperatureInFahrenheit();
 			//double		GetCpuUsagePercent();
-			//double		GetTotalRamInGigabytes();
+			double		GetTotalRamInGigabytes();
 			//double		GetRamUsagePercent();
 			double		GetTotalDiskSpaceInBytes();
 			double		GetTotalDiskSpaceInGigabytes();

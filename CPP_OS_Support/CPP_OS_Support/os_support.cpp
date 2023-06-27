@@ -31,6 +31,50 @@ namespace Essentials
 
 		}
 
+		double OS_Support::GetTotalRamInGigabytes()
+		{
+			double totalRAM = 0.0;
+
+#ifdef _WIN32
+			MEMORYSTATUSEX memoryStatus{};
+			memoryStatus.dwLength = sizeof(memoryStatus);
+			if (GlobalMemoryStatusEx(&memoryStatus))
+			{
+				totalRAM = static_cast<double>(memoryStatus.ullTotalPhys);
+			}
+
+#elif __linux__
+			std::ifstream meminfoFile("/proc/meminfo");
+
+			if (meminfoFile.is_open())
+			{
+				std::string line;
+				while (std::getline(meminfoFile, line))
+				{
+					if (line.find("MemTotal:") != std::string::npos)
+					{
+						double totalMemory;
+						std::sscanf(line.c_str(), "MemTotal: %lf", &totalMemory);
+						totalRAM = totalMemory * 1024.0;  // Convert from kilobytes to bytes
+						break;
+					}
+				}
+				meminfoFile.close();
+			}
+
+#elif __APPLE__
+			int mib[2];
+			size_t length;
+			mib[0] = CTL_HW;
+			mib[1] = HW_MEMSIZE;
+			length = sizeof(totalRAM);
+			sysctl(mib, 2, &totalRAM, &length, nullptr, 0);
+
+#endif
+
+			return totalRAM / (1024.0 * 1024.0 * 1024.0);
+		}
+
 		double OS_Support::GetTotalDiskSpaceInBytes()
 		{
 			double totalSpace = 0.0;
