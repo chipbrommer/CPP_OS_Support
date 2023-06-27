@@ -2,7 +2,8 @@
 //!
 //! @file		os_support.h
 //! 
-//! @brief		A cross platform class to communicate to the host OS 
+//! @brief		A cross platform class to communicate to the host OS and
+//!				simplify access to common needed aspects. 
 //! 
 //! @author		Chip Brommer
 //!
@@ -81,7 +82,9 @@ namespace Essentials
 			//double		GetTotalRamInGigabytes();
 			//double		GetRamUsagePercent();
 			double		GetTotalDiskSpaceInBytes();
+			double		GetTotalDiskSpaceInGigabytes();
 			double		GetFreeDiskSpaceInBytes();
+			double		GetFreeDiskSpaceInGigabytes();
 			double		GetFreeDiskSpacePercent();
 			int			GetNumberOfEthernetDevices();
 			int			MountStorageDevice(const std::string& device, const std::string& location);

@@ -64,6 +64,13 @@ namespace Essentials
 			return totalSpace;
 		}
 
+		double OS_Support::GetTotalDiskSpaceInGigabytes()
+		{
+			double bytes = GetTotalDiskSpaceInBytes();
+
+			return bytes / (1024 * 1024 * 1024);
+		}
+
 		double OS_Support::GetFreeDiskSpaceInBytes()
 		{
 			double freeSpace = 0.0;
@@ -97,6 +104,13 @@ namespace Essentials
 			return freeSpace;
 		}
 
+		double OS_Support::GetFreeDiskSpaceInGigabytes()
+		{
+			double bytes = GetFreeDiskSpaceInBytes();
+
+			return bytes / (1024 * 1024 * 1024);
+		}
+
 		double OS_Support::GetFreeDiskSpacePercent()
 		{
 			double totalDiskSpace = GetTotalDiskSpaceInBytes();
@@ -105,7 +119,7 @@ namespace Essentials
 
 			if (totalDiskSpace != 0 && freeDiskSpace != 0)
 			{
-				(freeDiskSpace / totalDiskSpace) * 100.0;
+				freeSpacePercentage = (freeDiskSpace / totalDiskSpace) * 100.0;
 			}
 
 			return freeSpacePercentage;
@@ -210,7 +224,7 @@ namespace Essentials
 
 #elif __linux__
 			// Linux implementation
-			std::string checkCommand = "grep -qs " + location + " /proc/mounts";
+			std::string checkCommand = "mount | grep -qs '" + device + "\\|" + location + "'";
 			int checkResult = std::system(checkCommand.c_str());
 
 			if (checkResult == 0)
@@ -236,7 +250,7 @@ namespace Essentials
 
 #elif __APPLE__
 			// macOS implementation
-			std::string checkCommand = "diskutil list | grep -qs " + location;
+			std::string checkCommand = = "diskutil info " + device + " | grep -q 'Mount Point: " + location + "'";
 			int checkResult = std::system(checkCommand.c_str());
 
 			if (checkResult == 0)

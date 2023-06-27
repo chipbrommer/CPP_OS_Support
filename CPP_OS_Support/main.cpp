@@ -1,22 +1,30 @@
-﻿
-#include <iostream>
+﻿#include <iostream>
 #include "CPP_OS_Support/os_support.h"
 
 int main()
 {
 	Essentials::Utilities::OS_Support os;
-	std::cout << "Hello CMake." << std::endl;
-	std::cout << os.GetSystemUpTimeInSeconds() << std::endl;
+
+	std::cout << "Time Up:      " << os.GetSystemUpTimeInSeconds()		<< " secs\n";
+
 	int secs, mins, hrs;
-	int rtn = os.GetSystemUpTimeHMS(hrs,mins,secs);
+	int rtn = os.GetSystemUpTimeHMS(hrs, mins, secs);
 
 	if (rtn > -1)
 	{
-		std::cout << "\n\tHours: " << hrs
-			<< "\n\tMins: " << mins
-			<< "\n\tSecs: " << secs
-			<< std::endl;
+		std::cout << hrs << ":" << mins << ":" << secs << "\n";
 	}
+
+	std::cout << "\n\n";
+
+
+	std::cout << "Total Space:  " << os.GetTotalDiskSpaceInGigabytes()	<< " Gb\n";
+	std::cout << "Free Space:   " << os.GetFreeDiskSpaceInGigabytes()	<< " Gb\n";
+	std::cout << "Percent Free: " << os.GetFreeDiskSpacePercent()		<< " %\n";
+
+	std::cout << "\n\n";
+
+	std::cout << "Number Eth Devices: " << os.GetNumberOfEthernetDevices() << "\n";
 
 	return 0;
 }
