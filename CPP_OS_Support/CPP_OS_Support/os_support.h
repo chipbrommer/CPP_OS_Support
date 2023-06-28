@@ -21,6 +21,7 @@
 //
 #ifdef _WIN32
 #include <winsock2.h>
+#include <psapi.h>
 #include <iphlpapi.h>
 #pragma comment(lib, "iphlpapi.lib")
 #elif __linux__
@@ -28,10 +29,12 @@
 #include <sys/statvfs.h>
 #include <cstdlib>
 #include <fstream>
+#include <unistd.h>
 #elif __APPLE__
 #include <sys/mount.h>
 #include <sys/sysinfo.h>
 #include <sys/sysctl.h>
+#include <mach/mach.h>
 #endif
 // 
 //	Defines:
@@ -80,16 +83,20 @@ namespace Essentials
 			//double		GetCpuTemperatureInFahrenheit();
 			//double		GetCpuUsagePercent();
 			double		GetTotalRamInGigabytes();
-			//double		GetRamUsagePercent();
-			double		GetTotalDiskSpaceInBytes();
+			uint64_t	GetTotalRamInBytes();
+			uint64_t	GetFreeRamInBytes();
+			uint64_t	GetUsedRamInBytes();
+			double		GetRamUsagePercent();
+			uint64_t	GetTotalDiskSpaceInBytes();
 			double		GetTotalDiskSpaceInGigabytes();
-			double		GetFreeDiskSpaceInBytes();
+			uint64_t	GetFreeDiskSpaceInBytes();
 			double		GetFreeDiskSpaceInGigabytes();
 			double		GetFreeDiskSpacePercent();
+			double		GetUsedDiskSpacePercent();
 			int			GetNumberOfEthernetDevices();
 			int			MountStorageDevice(const std::string& device, const std::string& location);
 			int			UnmountStorageDevice(const std::string& location);
-			int			GetSystemUpTimeInSeconds();
+			uint64_t	GetSystemUpTimeInSeconds();
 			int			GetSystemUpTimeHMS(int& hours, int& mins, int& secs);
 			std::string GetLastError();
 		protected:

@@ -75,16 +75,137 @@ namespace Essentials
 			return totalRAM / (1024.0 * 1024.0 * 1024.0);
 		}
 
-		double OS_Support::GetTotalDiskSpaceInBytes()
+		uint64_t OS_Support::GetTotalRamInBytes()
 		{
-			double totalSpace = 0.0;
+			uint64_t totalRAM = 0;
+
+#ifdef _WIN32
+			// Windows implementation
+			MEMORYSTATUSEX memoryStatus{};
+			memoryStatus.dwLength = sizeof(memoryStatus);
+			if (GlobalMemoryStatusEx(&memoryStatus))
+			{
+				totalRAM = static_cast<uint64_t>(memoryStatus.ullTotalPhys);
+			}
+#elif __linux__
+			// Linux implementation
+			struct sysinfo info;
+			if (sysinfo(&info) != -1)
+			{
+				totalRAM = static_cast<uint64_t>(info.totalram * info.mem_unit);
+			}
+#elif __APPLE__
+			// macOS implementation
+			int mib[2];
+			mib[0] = CTL_HW;
+			mib[1] = HW_MEMSIZE;
+			uint64_t physicalMemory;
+			uint64_t length = sizeof(physicalMemory);
+			sysctl(mib, 2, &physicalMemory, &length, nullptr, 0);
+			totalRAM = physicalMemory;
+#endif
+
+			return totalRAM;
+		}
+
+		uint64_t OS_Support::GetFreeRamInBytes()
+		{
+			uint64_t freeRAM = 0;
+
+#ifdef _WIN32
+			// Windows implementation
+			MEMORYSTATUSEX memoryStatus{};
+			memoryStatus.dwLength = sizeof(memoryStatus);
+			if (GlobalMemoryStatusEx(&memoryStatus))
+			{
+				freeRAM = static_cast<uint64_t>(memoryStatus.ullAvailPhys);
+			}
+#elif __linux__
+			// Linux implementation
+			struct sysinfo info;
+			if (sysinfo(&info) != -1)
+			{
+				freeRAM = static_cast<uint64_t>(info.freeram * info.mem_unit);
+			}
+#elif __APPLE__
+			// macOS implementation
+			int64_t physicalMemory;
+			size_t length = sizeof(physicalMemory);
+			sysctlbyname("hw.memsize", &physicalMemory, &length, nullptr, 0);
+			freeRAM = static_cast<size_t>(physicalMemory);
+#endif
+
+			return freeRAM;
+		}
+
+		uint64_t OS_Support::GetUsedRamInBytes()
+		{
+			uint64_t ramUsage = 0;
+
+#ifdef _WIN32
+			// Windows implementation
+			PROCESS_MEMORY_COUNTERS_EX pmc{};
+			if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
+			{
+				ramUsage = pmc.WorkingSetSize;
+			}
+#elif __linux__
+			std::ifstream meminfoFile("/proc/meminfo");
+			std::string line;
+
+			while (std::getline(meminfoFile, line))
+			{
+				// Search for the "MemAvailable" or "Active" line
+				if (line.compare(0, 12, "MemAvailable") == 0 || line.compare(0, 6, "Active") == 0)
+				{
+					std::istringstream iss(line);
+					std::string fieldName;
+					size_t fieldValue;
+
+					// Extract the field name and value
+					iss >> fieldName >> fieldValue;
+
+					if (fieldName == "MemAvailable:" || fieldName == "Active:")
+					{
+						// Convert from kilobytes to bytes
+						ramUsage = fieldValue * 1024;
+						break;
+					}
+		}
+			}
+#elif __APPLE__
+			// macOS implementation
+			struct mach_task_basic_info info;
+			mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+			if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, reinterpret_cast<task_info_t>(&info), &infoCount) == KERN_SUCCESS)
+			{
+				ramUsage = info.resident_size;
+			}
+#endif
+
+			return ramUsage;
+		}
+
+		double OS_Support::GetRamUsagePercent()
+		{
+			uint64_t totalRAM = GetTotalRamInBytes();
+			uint64_t freeRAM = GetFreeRamInBytes();
+			uint64_t usedRAM = totalRAM - freeRAM;
+			double percent = static_cast<double>(usedRAM) / totalRAM;
+
+			return percent * 100.0;
+		}
+
+		uint64_t OS_Support::GetTotalDiskSpaceInBytes()
+		{
+			uint64_t totalSpace = 0;
 
 #ifdef WIN32
 			// Windows implementation
 			ULARGE_INTEGER freeBytesAvailable, totalBytes, totalFreeBytes;
 			if (GetDiskFreeSpaceEx(NULL, &freeBytesAvailable, &totalBytes, &totalFreeBytes))
 			{
-				totalSpace = static_cast<double>(totalBytes.QuadPart);
+				totalSpace = static_cast<uint64_t>(totalBytes.QuadPart);
 			}
 
 #elif __linux__
@@ -92,7 +213,7 @@ namespace Essentials
 			struct statvfs diskInfo {};
 			if (statvfs("/", &diskInfo) == 0)
 			{
-				totalSpace = static_cast<double>(diskInfo.f_frsize) * diskInfo.f_blocks;
+				totalSpace = static_cast<uint64_t>(diskInfo.f_frsize) * diskInfo.f_blocks;
 			}
 
 #elif __APPLE__
@@ -100,7 +221,7 @@ namespace Essentials
 			struct statfs diskInfo {};
 			if (statfs("/", &diskInfo) == 0)
 			{
-				totalSpace = static_cast<double>(diskInfo.f_bsize) * diskInfo.f_blocks;
+				totalSpace = static_cast<uint64_t>(diskInfo.f_bsize) * diskInfo.f_blocks;
 			}
 
 #endif
@@ -110,21 +231,21 @@ namespace Essentials
 
 		double OS_Support::GetTotalDiskSpaceInGigabytes()
 		{
-			double bytes = GetTotalDiskSpaceInBytes();
+			double bytes = (double)GetTotalDiskSpaceInBytes();
 
 			return bytes / (1024 * 1024 * 1024);
 		}
 
-		double OS_Support::GetFreeDiskSpaceInBytes()
+		uint64_t OS_Support::GetFreeDiskSpaceInBytes()
 		{
-			double freeSpace = 0.0;
+			uint64_t freeSpace = 0;
 
 #ifdef _WIN32
 			// Windows implementation
 			ULARGE_INTEGER freeBytesAvailable, totalBytes, totalFreeBytes;
 			if (GetDiskFreeSpaceEx(NULL, &freeBytesAvailable, &totalBytes, &totalFreeBytes))
 			{
-				freeSpace = static_cast<double>(totalFreeBytes.QuadPart);
+				freeSpace = static_cast<uint64_t>(totalFreeBytes.QuadPart);
 			}
 
 #elif __linux__
@@ -132,7 +253,7 @@ namespace Essentials
 			struct statvfs diskInfo {};
 			if (statvfs("/", &diskInfo) == 0)
 			{
-				freeSpace = static_cast<double>(diskInfo.f_frsize) * diskInfo.f_bavail;
+				freeSpace = static_cast<uint64_t>(diskInfo.f_frsize) * diskInfo.f_bavail;
 			}
 
 #elif __APPLE__
@@ -140,7 +261,7 @@ namespace Essentials
 			struct statfs diskInfo {};
 			if (statfs("/", &diskInfo) == 0)
 			{
-				freeSpace = static_cast<double>(diskInfo.f_bsize) * diskInfo.f_bavail;
+				freeSpace = static_cast<uint64_t>(diskInfo.f_bsize) * diskInfo.f_bavail;
 			}
 
 #endif
@@ -150,15 +271,15 @@ namespace Essentials
 
 		double OS_Support::GetFreeDiskSpaceInGigabytes()
 		{
-			double bytes = GetFreeDiskSpaceInBytes();
+			double bytes = (double)GetFreeDiskSpaceInBytes();
 
 			return bytes / (1024 * 1024 * 1024);
 		}
 
 		double OS_Support::GetFreeDiskSpacePercent()
 		{
-			double totalDiskSpace = GetTotalDiskSpaceInBytes();
-			double freeDiskSpace = GetFreeDiskSpaceInBytes();
+			double totalDiskSpace = (double)GetTotalDiskSpaceInBytes();
+			double freeDiskSpace = (double)GetFreeDiskSpaceInBytes();
 			double freeSpacePercentage = 0;
 
 			if (totalDiskSpace != 0 && freeDiskSpace != 0)
@@ -167,6 +288,21 @@ namespace Essentials
 			}
 
 			return freeSpacePercentage;
+		}
+
+		double OS_Support::GetUsedDiskSpacePercent()
+		{
+			double totalDiskSpace = (double)GetTotalDiskSpaceInBytes();
+			double freeDiskSpace = (double)GetFreeDiskSpaceInBytes();
+			double usedDiskSpace = totalDiskSpace - freeDiskSpace;
+			double usedSpacePercentage = 0;
+
+			if (totalDiskSpace != 0 && freeDiskSpace != 0)
+			{
+				usedSpacePercentage = (usedDiskSpace / totalDiskSpace) * 100.0;
+			}
+
+			return usedSpacePercentage;
 		}
 
 		int OS_Support::GetNumberOfEthernetDevices()
@@ -186,13 +322,22 @@ namespace Essentials
 				// Get the adapter info
 				if (GetAdaptersInfo(adapters, &bufferLength) == NO_ERROR)
 				{
-					// Count the number of Ethernet adapters excluding loopback interfaces
+					// Count the number of Ethernet adapters excluding loopback interfaces, virtual, and Bluetooth adapters
 					int count = 0;
 					PIP_ADAPTER_INFO currentAdapter = adapters;
 					while (currentAdapter)
 					{
-						if (currentAdapter->Type == MIB_IF_TYPE_ETHERNET && strcmp(currentAdapter->Description, "Loopback") != 0)
-							count++;
+						if (currentAdapter->Type == MIB_IF_TYPE_ETHERNET)
+						{
+							std::string adapterDescription(currentAdapter->Description);
+
+							if (adapterDescription.find("Virtual") == std::string::npos		&& 
+								adapterDescription.find("Bluetooth") == std::string::npos	&&
+								adapterDescription.find("Loopback") == std::string::npos)
+							{
+								count++;
+							}
+						}
 
 						currentAdapter = currentAdapter->Next;
 					}
@@ -389,7 +534,7 @@ namespace Essentials
 			return result;
 		}
 
-		int OS_Support::GetSystemUpTimeInSeconds()
+		uint64_t OS_Support::GetSystemUpTimeInSeconds()
 		{
 			uint64_t uptime = 0;
 
@@ -411,14 +556,14 @@ namespace Essentials
 
 		int OS_Support::GetSystemUpTimeHMS(int& hours, int& mins, int& secs)
 		{
-			int uptime = GetSystemUpTimeInSeconds();
+			uint64_t uptime = GetSystemUpTimeInSeconds();
 
 			if (uptime > 0)
 			{
-				mins = uptime / 60;
+				mins = (int)uptime / 60;
 				hours = mins / 60;
 				mins = mins % 60;
-				secs = uptime % 60;
+				secs = (int)uptime % 60;
 
 				return 0;
 			}

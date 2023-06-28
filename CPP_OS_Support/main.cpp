@@ -18,9 +18,17 @@ int main()
 	std::cout << "\n\n";
 
 	std::cout << "Total Ram:    " << os.GetTotalRamInGigabytes()		<< " Gb\n";
+	std::cout << "Total Ram:    " << os.GetTotalRamInBytes()			<< " Bytes\n";
+	std::cout << "Used Ram:     " << os.GetUsedRamInBytes()				<< " Bytes\n";
+	std::cout << "Free Ram:     " << os.GetFreeRamInBytes()				<< " Bytes\n";
+	std::cout << "Percent Used: " << os.GetRamUsagePercent()			<< " %\n";
+
+	std::cout << "\n\n";
+
 	std::cout << "Total Space:  " << os.GetTotalDiskSpaceInGigabytes()	<< " Gb\n";
 	std::cout << "Free Space:   " << os.GetFreeDiskSpaceInGigabytes()	<< " Gb\n";
 	std::cout << "Percent Free: " << os.GetFreeDiskSpacePercent()		<< " %\n";
+	std::cout << "Percent Used: " << os.GetUsedDiskSpacePercent()		<< " %\n";
 
 	std::cout << "\n\n";
 
