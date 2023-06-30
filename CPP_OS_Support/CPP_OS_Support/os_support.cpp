@@ -31,6 +31,49 @@ namespace Essentials
 
 		}
 
+		double OS_Support::GetCpuUsagePercent()
+		{
+			double cpuUsage = 0.0;
+
+#ifdef _WIN32
+			// Windows implementation
+			PDH_HQUERY query;
+			PDH_HCOUNTER counter;
+			PdhOpenQuery(NULL, NULL, &query);
+			PdhAddCounter(query, "\\Processor(_Total)\\% Processor Time", NULL, &counter);
+			PdhCollectQueryData(query);
+			Sleep(1000);  // Sleep for 1 second to get the updated value
+			PdhCollectQueryData(query);
+			PDH_FMT_COUNTERVALUE value;
+			PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE, NULL, &value);
+			cpuUsage = value.doubleValue;
+
+#elif __linux__
+			// Linux implementation
+			std::ifstream file("/proc/stat");
+			std::string line;
+			std::getline(file, line);
+			file.close();
+			unsigned long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
+			sscanf(line.c_str(), "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+				&user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
+			unsigned long total_idle = idle + iowait;
+			unsigned long total_non_idle = user + nice + system + irq + softirq + steal;
+			unsigned long total = total_idle + total_non_idle;
+			cpuUsage = (total - total_idle) * 100.0 / total;
+
+#elif __APPLE__
+			// macOS implementation
+			int cpuUsagePercent = 0;
+			size_t size = sizeof(cpuUsagePercent);
+			sysctlbyname("kern.cp_times", &cpuUsagePercent, &size, NULL, 0);
+			cpuUsage = static_cast<double>(cpuUsagePercent) / 10.0;
+
+#endif
+
+			return cpuUsage;
+		}
+
 		double OS_Support::GetTotalRamInGigabytes()
 		{
 			double totalRAM = 0.0;

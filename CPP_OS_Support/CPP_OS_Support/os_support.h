@@ -20,10 +20,12 @@
 #include <map>							// Error map
 //
 #ifdef _WIN32
-#include <winsock2.h>
+#include <Windows.h>
 #include <psapi.h>
 #include <iphlpapi.h>
 #pragma comment(lib, "iphlpapi.lib")
+#include <Pdh.h>
+#pragma comment(lib, "Pdh.lib")
 #elif __linux__
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
@@ -79,9 +81,7 @@ namespace Essentials
 		public:
 			OS_Support();
 			~OS_Support();
-			//double		GetCpuTemperatureInCelsuis();
-			//double		GetCpuTemperatureInFahrenheit();
-			//double		GetCpuUsagePercent();
+			double		GetCpuUsagePercent();
 			double		GetTotalRamInGigabytes();
 			uint64_t	GetTotalRamInBytes();
 			uint64_t	GetFreeRamInBytes();

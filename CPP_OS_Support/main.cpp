@@ -25,6 +25,10 @@ int main()
 
 	std::cout << "\n\n";
 
+	std::cout << "CPU Usage:    " << os.GetCpuUsagePercent()			<< " %\n";
+
+	std::cout << "\n\n";
+
 	std::cout << "Total Space:  " << os.GetTotalDiskSpaceInGigabytes()	<< " Gb\n";
 	std::cout << "Free Space:   " << os.GetFreeDiskSpaceInGigabytes()	<< " Gb\n";
 	std::cout << "Percent Free: " << os.GetFreeDiskSpacePercent()		<< " %\n";
